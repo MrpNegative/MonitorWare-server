@@ -78,7 +78,7 @@ const run = async () => {
       res.send(result);
     });
     // filter by email
-    app.get("/inventory/:email", jwtVerify, async (req, res) => {
+    app.get("/inventory/myitams/:email", jwtVerify, async (req, res) => {
       const dcMail = req?.decoded.email;
       const email = req?.params.email;
       if (email === dcMail) {
