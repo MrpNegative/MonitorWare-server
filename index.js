@@ -10,6 +10,21 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const jwtVerify = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ massage: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.DB_ACCESS_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ massage: "Access Forbidden" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
+
 // mongo script
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ext34.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
@@ -48,6 +63,7 @@ const run = async () => {
       res.send(result);
     });
     // filter by id
+
     // app.get("/inventory/:id", async (req, res) => {
     //   const id = req.params.id;
     //   const query = { _id: ObjectId(id) };
@@ -56,29 +72,32 @@ const run = async () => {
     // });
     // delete by id
     app.delete("/inventory/:id", async (req, res) => {
-      const id = req.params.id;
+      const id = req?.params.id;
       const query = { _id: ObjectId(id) };
       const result = await warhorseCollection.deleteOne(query);
       res.send(result);
     });
     // filter by email
-    app.get("/inventory/:email", async (req, res) => {
-      const email = req.params.email;
-      console.log(email);
-      const cursor = warhorseCollection.find({ email: email });
-      const result = await cursor.toArray();
-      res.send(result);
+    app.get("/inventory/:email", jwtVerify, async (req, res) => {
+      const dcMail = req?.decoded.email;
+      const email = req?.params.email;
+      if (email === dcMail) {
+        const cursor = warhorseCollection.find({ email: email });
+        const result = await cursor.toArray();
+        res.send(result);
+      } else {
+        res.status(403).send({ massage: "Access Forbidden" });
+      }
     });
-    // petch data
+    // peach data
     app.put("/inventory/:id", async (req, res) => {
-      const id = req.params.id;
+      const id = req?.params.id;
       const query = { _id: ObjectId(id) };
-      const updateItem = req.body;
-      console.log(updateItem);
+      const updateItem = req?.body;
       const option = { upsert: true };
       const updateDoc = {
         $set: {
-          quantity: updateItem.dq,
+          quantity: updateItem?.dq,
         },
       };
       const result = await warhorseCollection.updateOne(
