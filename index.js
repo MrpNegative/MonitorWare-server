@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const app = express();
 
 // medal ware
@@ -23,6 +24,15 @@ const run = async () => {
     console.log("mongoConnected");
     const warhorseCollection = client.db("warhorse").collection("inventory");
 
+    // Auth
+    app.post("/login", async (req, res) => {
+      const user = req.body;
+      const accessToken = jwt.sign(user, process.env.DB_ACCESS_TOKEN, {
+        expiresIn: "5d",
+      });
+      res.send({ accessToken });
+    });
+
     // inventory
     // get
     app.get("/inventory", async (req, res) => {
@@ -38,17 +48,46 @@ const run = async () => {
       res.send(result);
     });
     // filter by id
-    app.get("/inventory/:id", async (req, res) => {
+    // app.get("/inventory/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: ObjectId(id) };
+    //   const service = await warhorseCollection.findOne(query);
+    //   res.send(service);
+    // });
+    // delete by id
+    app.delete("/inventory/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const service = await warhorseCollection.findOne(query);
-      res.send(service);
+      const result = await warhorseCollection.deleteOne(query);
+      res.send(result);
     });
-    // delete by id 
-    app.get('/inventory/:id', async(req, res)=>{
-      
-    })
-
+    // filter by email
+    app.get("/inventory/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const cursor = warhorseCollection.find({ email: email });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // petch data
+    app.put("/inventory/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const updateItem = req.body;
+      console.log(updateItem);
+      const option = { upsert: true };
+      const updateDoc = {
+        $set: {
+          quantity: updateItem.dq,
+        },
+      };
+      const result = await warhorseCollection.updateOne(
+        query,
+        updateDoc,
+        option
+      );
+      res.send(result);
+    });
   } finally {
     //kk
   }
@@ -62,3 +101,11 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log("warhouse server is runing on port", port);
 });
+
+// app.get("/inventory", async (req, res) => {
+//   const email = req.query;
+//   console.log(email);
+//   const cursor = warhorseCollection.find({email: email});
+//   const result = await cursor.toArray();
+//   res.send(result);
+// });
