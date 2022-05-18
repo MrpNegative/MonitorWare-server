@@ -64,12 +64,12 @@ const run = async () => {
     });
     // filter by id
 
-    // app.get("/inventory/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: ObjectId(id) };
-    //   const service = await warhorseCollection.findOne(query);
-    //   res.send(service);
-    // });
+    app.get("/inventory/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const service = await warhorseCollection.findOne(query);
+      res.send(service);
+    });
     // delete by id
     app.delete("/inventory/:id", async (req, res) => {
       const id = req?.params.id;
